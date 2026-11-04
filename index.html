@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sosiologi Family 100</title>
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<style>
+:root{--bg:#1e3a8a;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{min-height:100%;margin:0;background:var(--bg);font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;overflow-x:hidden}
+.p3{perspective:1000px}.t3{transform-style:preserve-3d}.bf{backface-visibility:hidden}.rx{transform:rotateX(180deg)}
+@keyframes pop{0%{transform:scale(.5);opacity:0}50%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:0}}
+.pop{animation:pop .8s cubic-bezier(0,0,.2,1) forwards}
+@keyframes fi{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.fi{animation:fi 1s ease-out forwards}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const $=s=>document.querySelector(s),app=$('#app'),cl=o=>JSON.parse(JSON.stringify(o));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const XS=w=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" class="w-full h-full"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
+
+// Soal awal (10 soal). Soal 6-10 tambahan, bisa diubah lewat menu Edit Soal.
+const DEF=[
+["Sebutkan faktor penyebab terjadinya konflik sosial menurut Soerjono Soekanto!",[["PERBEDAAN INDIVIDU",30],["PERBEDAAN KEBUDAYAAN",25],["PERBEDAAN KEPENTINGAN",25],["PERUBAHAN SOSIAL",20]]],
+["Sebutkan bentuk-bentuk akomodasi untuk menyelesaikan konflik!",[["MEDIASI",28],["ARBITRASE",25],["KONSILIASI",20],["KOMPROMI",15],["AJUDIKASI",12]]],
+["Sebutkan dampak negatif dari terjadinya konflik sosial!",[["KORBAN JIWA/HARTA",35],["RETAKNYA HUBUNGAN",25],["DOMINASI PEMENANG",20],["PERUBAHAN KEPRIBADIAN",20]]],
+["Sebutkan jenis-jenis kekerasan berdasarkan bentuknya!",[["KEKERASAN FISIK",40],["KEKERASAN VERBAL",30],["KEKERASAN PSIKOLOGIS",20],["KEKERASAN STRUKTURAL",10]]],
+["Sebutkan teori-teori tentang kekerasan!",[["TEORI FAKTOR INDIVIDUAL",30],["TEORI FAKTOR KELOMPOK",25],["TEORI DINAMIKA KELOMPOK",25],["TEORI DEPRIVASI RELATIF",20]]],
+["Sebutkan bentuk-bentuk konflik sosial menurut Soerjono Soekanto!",[["KONFLIK PRIBADI",25],["KONFLIK RASIAL",20],["KONFLIK ANTARKELAS SOSIAL",20],["KONFLIK POLITIK",20],["KONFLIK INTERNASIONAL",15]]],
+["Sebutkan contoh konflik sosial yang sering terjadi di Indonesia!",[["TAWURAN PELAJAR",30],["KONFLIK SARA",25],["KONFLIK AGRARIA/LAHAN",20],["KONFLIK POLITIK/PILKADA",15],["KONFLIK ANTARSUKU",10]]],
+["Sebutkan dampak positif dari terjadinya konflik sosial!",[["SOLIDARITAS KELOMPOK MENINGKAT",30],["TERJADI PERUBAHAN SOSIAL",25],["MENINGKATKAN TOLERANSI",20],["INTROSPEKSI DIRI",15],["MUNCUL ATURAN BARU",10]]],
+["Sebutkan faktor penyebab perundungan (bullying) di lingkungan sekolah!",[["PENGARUH TEMAN SEBAYA",30],["KURANG PERHATIAN ORANG TUA",25],["PENGARUH MEDIA/TONTONAN",20],["INGIN DIAKUI/BERKUASA",15],["KURANG PENGAWASAN SEKOLAH",10]]],
+["Sebutkan upaya mencegah konflik dan kekerasan di masyarakat!",[["MENGEMBANGKAN TOLERANSI",30],["MUSYAWARAH/DIALOG",25],["PENEGAKAN HUKUM YANG ADIL",20],["PENDIDIKAN KARAKTER",15],["GOTONG ROYONG",10]]]
+].map(([q,a])=>({q,a:a.map(([t,p])=>({t,p}))}));
+
+// Penyimpanan di browser (localStorage)
+const K='sf100-v1';
+let bank=null,rounds=5,pl=[],cur=0,sc={A:0,B:0},rs=0,rev=[],wr=0,snd=true,ac,xt,arm='';
+try{const s=JSON.parse(localStorage.getItem(K));if(s&&s.bank.every(x=>typeof x.q=='string'&&x.a.every(y=>typeof y.t=='string'))){bank=s.bank;rounds=s.rounds==10?10:5}}catch(e){}
+if(!bank||!bank.length)bank=cl(DEF);
+const save=()=>{try{localStorage.setItem(K,JSON.stringify({bank,rounds}))}catch(e){}};
+const valid=()=>bank.filter(x=>x.q.trim()&&x.a.some(y=>y.t.trim()));
+const clean=()=>{bank=bank.map(x=>({q:x.q.trim(),a:x.a.filter(y=>y.t.trim()).map(y=>({t:y.t.trim(),p:y.p}))})).filter(x=>x.q||x.a.length);save()};
+const sure=(b,k)=>{if(arm==k){arm='';return 1}arm=k;const t=b.textContent;b.textContent='Yakin?';setTimeout(()=>{if(arm==k){arm='';b.textContent=t}},2500)};
+
+function beep(t){if(!snd)return;try{
+ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state=='suspended')ac.resume();
+const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime,f=o.frequency,v=g.gain;o.connect(g);g.connect(ac.destination);
+if(t=='ok'){o.type='sine';f.setValueAtTime(523.25,n);f.exponentialRampToValueAtTime(1046.5,n+.1);v.setValueAtTime(.5,n);v.exponentialRampToValueAtTime(.01,n+.8);o.stop(n+.8)}
+else if(t=='no'){o.type='sawtooth';f.setValueAtTime(150,n);f.linearRampToValueAtTime(100,n+.3);v.setValueAtTime(.8,n);v.exponentialRampToValueAtTime(.01,n+.5);o.stop(n+.5)}
+else{o.type='square';f.setValueAtTime(440,n);f.setValueAtTime(554,n+.1);f.setValueAtTime(659,n+.2);v.setValueAtTime(.3,n);v.linearRampToValueAtTime(0,n+.6);o.stop(n+.6)}
+o.start()}catch(e){}}
+
+// ===== MENU =====
+function menu(){
+const v=valid().length,n=Math.min(v,rounds);
+app.innerHTML=`<div class="min-h-screen flex flex-col items-center justify-center text-white p-4 text-center"><div class="max-w-2xl w-full space-y-6 fi">
+<h1 class="text-4xl md:text-6xl font-extrabold text-yellow-400 drop-shadow-lg tracking-wider">SOSIOLOGI<br>FAMILY 100</h1>
+<p class="text-lg md:text-xl text-blue-200">Topik: Konflik Sosial &amp; Kekerasan</p>
+<div class="bg-blue-800/50 p-4 rounded-xl border-2 border-blue-500 mx-auto max-w-lg"><h3 class="font-bold mb-3 text-yellow-300">JUMLAH RONDE</h3>
+<div class="flex gap-3">${[5,10].map(r=>`<button data-a="rounds" data-n="${r}" class="flex-1 py-2 rounded-lg font-black border-2 ${rounds==r?'bg-yellow-500 text-blue-900 border-yellow-300':'border-blue-400 text-blue-200 hover:bg-blue-700'}">${r} RONDE</button>`).join('')}</div>
+<p class="text-xs mt-3 ${v<rounds?'text-amber-300':'text-blue-300'}">Bank soal: ${v} soal${v<rounds?` — game hanya ${n} ronde. Tambah soal lewat Edit Soal.`:''}</p></div>
+<div class="bg-blue-800/50 p-4 md:p-6 rounded-xl border-2 border-blue-500 mx-auto max-w-lg"><h3 class="text-base md:text-lg font-bold mb-4 text-yellow-300">CARA BERMAIN</h3>
+<ul class="text-left text-sm md:text-base space-y-2 list-disc list-inside"><li>Bagi kelas menjadi 2 kelompok (Tim A &amp; Tim B).</li><li>Satu orang menjadi Host (Moderator).</li><li>Host membacakan soal survei.</li><li>Tim berebut menjawab.</li><li>Jawaban salah = Tanda silang (X).</li></ul></div>
+<div class="flex flex-col sm:flex-row gap-3 justify-center">
+<button data-a="start" ${v?'':'disabled'} class="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-blue-900 font-black text-xl md:text-2xl rounded-full transition-all hover:scale-105 shadow-[0_0_20px_rgba(234,179,8,0.6)]">MULAI GAME</button>
+<button data-a="edit" class="px-8 py-4 bg-blue-700 hover:bg-blue-600 border-2 border-blue-400 font-black text-xl md:text-2xl rounded-full transition-all hover:scale-105">EDIT SOAL</button>
+</div></div></div>`}
+
+// ===== EDITOR SOAL =====
+function edit(){
+app.innerHTML=`<div class="min-h-screen text-white p-3 md:p-6 pb-28"><div class="max-w-3xl mx-auto">
+<h1 class="text-2xl md:text-3xl font-black text-yellow-400">Edit Soal</h1>
+<p class="text-sm text-blue-200 mb-4">Perubahan tersimpan otomatis di browser ini. Urutan soal = urutan ronde. Maksimal 8 jawaban per soal.</p>
+${bank.map((x,i)=>`<div class="bg-blue-950/60 border-2 border-blue-500 rounded-xl p-3 md:p-4 mb-4">
+<div class="flex items-center gap-2 mb-2"><b class="text-yellow-400 flex-1">Soal ${i+1}</b>
+<button data-a="mv" data-i="${i}" data-d="-1" aria-label="Naikkan" class="px-2 rounded bg-blue-700 hover:bg-blue-600">↑</button>
+<button data-a="mv" data-i="${i}" data-d="1" aria-label="Turunkan" class="px-2 rounded bg-blue-700 hover:bg-blue-600">↓</button>
+<button data-a="dq" data-i="${i}" class="px-2 rounded bg-red-700 hover:bg-red-600 text-sm">Hapus</button></div>
+<textarea data-f="q" data-i="${i}" rows="2" placeholder="Tulis pertanyaan…" class="w-full rounded bg-blue-900 border border-blue-400 p-2">${esc(x.q)}</textarea>
+${x.a.map((y,j)=>`<div class="flex gap-2 mt-2"><input data-f="t" data-i="${i}" data-j="${j}" value="${esc(y.t)}" placeholder="Jawaban" class="flex-1 min-w-0 rounded bg-blue-900 border border-blue-400 px-2 py-1"><input data-f="p" data-i="${i}" data-j="${j}" type="number" min="0" value="${y.p}" aria-label="Poin" class="w-16 rounded bg-blue-900 border border-blue-400 px-2 py-1 text-center"><button data-a="da" data-i="${i}" data-j="${j}" aria-label="Hapus jawaban" class="px-2 rounded bg-red-700 hover:bg-red-600">✕</button></div>`).join('')}
+${x.a.length<8?`<button data-a="aa" data-i="${i}" class="mt-2 text-sm px-3 py-1 rounded bg-blue-700 hover:bg-blue-600">+ Jawaban</button>`:''}</div>`).join('')}
+<div class="flex gap-3 flex-wrap"><button data-a="aq" class="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-blue-900 font-bold">+ Tambah Soal</button>
+<button data-a="reset" class="px-4 py-2 rounded-lg bg-red-700 hover:bg-red-600 text-sm">Kembalikan ke Soal Awal</button></div></div>
+<div class="fixed bottom-0 inset-x-0 bg-blue-900/95 border-t border-blue-500 p-3 flex justify-center" style="padding-bottom:calc(.75rem + env(safe-area-inset-bottom,0px))"><button data-a="back" class="px-8 py-3 bg-green-600 hover:bg-green-500 font-black rounded-full">SELESAI &amp; KE MENU</button></div></div>`}
+
+// ===== PERMAINAN =====
+const team=t=>`<div class="bg-blue-950 border-2 md:border-4 border-yellow-500 rounded-lg p-2 md:p-4 w-28 md:w-48 text-center shadow-lg relative overflow-hidden shrink-0"><div class="absolute top-0 left-0 w-full h-1 md:h-2 bg-yellow-500"></div><h2 class="text-sm md:text-xl font-bold text-yellow-400 mb-1">TIM ${t}</h2><div class="text-3xl md:text-5xl font-black bg-black/30 rounded py-1 md:py-2 font-mono">${sc[t]}</div><button data-a="win" data-t="${t}" class="mt-2 w-full py-1 bg-green-600 hover:bg-green-500 text-[10px] md:text-xs font-bold rounded uppercase tracking-wider"><span class="hidden md:inline">Menang Ronde</span><span class="md:hidden">Menang</span></button></div>`;
+
+function play(){
+const q=pl[cur];rev=q.a.map(()=>0);rs=0;wr=0;
+app.innerHTML=`<div class="min-h-screen bg-gradient-to-b from-blue-900 via-blue-800 to-indigo-900 text-white flex flex-col">
+<div class="w-full bg-blue-950/50 p-2 md:p-4 shadow-xl"><div class="max-w-6xl mx-auto flex justify-between items-start md:items-center">${team('A')}
+<div class="flex flex-col items-center flex-1 px-2 md:px-8"><div class="flex items-center gap-2 mb-2">
+<select data-s="go" aria-label="Pilih ronde" class="text-xs md:text-sm font-semibold tracking-widest text-blue-100 bg-blue-900 px-2 py-1 rounded-full border border-blue-500">${pl.map((_,k)=>`<option value="${k}" ${k==cur?'selected':''}>RONDE ${k+1} / ${pl.length}</option>`).join('')}</select>
+<button data-a="snd" aria-label="Suara" class="p-1 rounded hover:bg-blue-800">${snd?'🔊':'🔇'}</button></div>
+<div class="bg-black/40 border-2 border-yellow-500/50 px-4 py-2 md:px-8 md:py-3 rounded-xl flex flex-col md:flex-row items-center gap-1 md:gap-4"><span class="text-[10px] md:text-sm text-yellow-200 uppercase font-bold">Total Poin</span><span id="rs" class="text-3xl md:text-5xl font-mono font-bold leading-none">0</span></div></div>${team('B')}</div></div>
+<div class="flex-1 flex flex-col items-center p-4 w-full max-w-6xl mx-auto">
+<div class="w-full bg-gradient-to-r from-blue-800 to-indigo-800 border-y-2 md:border-y-4 border-yellow-500 py-4 px-2 md:p-6 mb-4 md:mb-8 text-center shadow-2xl rounded-lg md:rounded-none mt-2"><h2 class="text-lg md:text-3xl font-bold uppercase tracking-wide leading-tight md:leading-relaxed">“${esc(q.q)}”</h2></div>
+<div class="w-full grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 pb-24 md:pb-0">
+${q.a.map((y,k)=>`<div data-a="rv" data-k="${k}" class="h-14 md:h-20 p3 cursor-pointer group"><div class="relative w-full h-full transition-all duration-700 t3">
+<div class="absolute w-full h-full bf bg-gradient-to-b from-blue-600 to-blue-800 border-2 border-white rounded-lg flex items-center shadow-lg group-hover:brightness-110"><div class="w-10 md:w-12 h-full bg-blue-900/50 flex items-center justify-center border-r border-blue-400 rounded-l-lg"><span class="text-lg md:text-2xl font-bold text-blue-200">${k+1}</span></div><div class="flex-1 flex justify-center items-center"><div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-blue-900 border border-blue-400"></div></div></div>
+<div class="absolute w-full h-full bf rx bg-gradient-to-b from-yellow-500 to-yellow-600 border-2 border-white rounded-lg flex items-center shadow-lg overflow-hidden"><div class="flex-1 px-3 md:px-6 flex items-center h-full overflow-hidden"><span class="text-sm md:text-2xl font-black text-blue-900 uppercase leading-tight">${esc(y.t)}</span></div><div class="w-14 md:w-20 h-full bg-black/20 flex items-center justify-center border-l border-white/30 shrink-0"><span class="text-xl md:text-3xl font-mono font-bold">${y.p}</span></div></div></div></div>`).join('')}
+${Array.from({length:Math.max(0,8-q.a.length)},()=>`<div class="hidden md:block h-20 opacity-30 border-2 border-blue-900/50 rounded-lg bg-blue-900/20"></div>`).join('')}</div>
+<div class="fixed bottom-0 left-0 right-0 bg-blue-900/90 backdrop-blur border-t border-blue-500 p-4 md:relative md:bg-transparent md:border-0 md:p-0 md:mt-8 flex justify-center gap-4 z-40" style="padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))">
+<button data-a="no" class="flex-1 md:flex-none px-6 py-3 bg-red-600 hover:bg-red-500 border-b-4 border-red-800 active:border-b-0 font-black text-lg md:text-xl rounded shadow-lg uppercase tracking-widest flex items-center justify-center gap-2"><span class="w-5 h-5">${XS(4)}</span>SALAH</button>
+<div class="flex items-center bg-black/30 px-6 py-3 rounded text-xl font-bold text-red-400 border border-red-500/30">SALAH:&nbsp;<span id="wr">0</span></div></div></div>
+<div id="xm" style="display:none" class="fixed inset-0 z-50 items-center justify-center pointer-events-none bg-black/20 backdrop-blur-sm"><div id="xi" class="text-red-600 w-64 h-64 md:w-96 md:h-96" style="filter:drop-shadow(0 0 50px rgba(220,38,38,.8))">${XS(5)}</div></div></div>`}
+
+function done(){
+const w=sc.A>sc.B?'TIM A':sc.B>sc.A?'TIM B':'SERI';
+app.innerHTML=`<div class="min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900 flex flex-col items-center justify-center text-white p-4 text-center">
+<div class="text-7xl md:text-9xl mb-6 animate-bounce">🏆</div><h1 class="text-3xl md:text-5xl font-bold mb-8">HASIL AKHIR</h1>
+<div class="flex gap-4 md:gap-8 mb-8 md:mb-12 w-full max-w-3xl justify-center items-center">${['A','B'].map(t=>`<div class="bg-blue-800 p-4 md:p-8 rounded-2xl border-4 border-blue-500 w-1/3"><h2 class="text-lg md:text-2xl font-bold text-blue-300 mb-2">TIM ${t}</h2><p class="text-4xl md:text-6xl font-black">${sc[t]}</p></div>`).join('')}</div>
+<div class="text-2xl md:text-4xl font-bold text-yellow-300 mb-12">PEMENANG: ${w}</div>
+<button data-a="back" class="px-6 py-3 bg-white text-blue-900 font-bold rounded-lg hover:bg-gray-200">Main Lagi</button></div>`}
+
+const next=()=>{if(cur<pl.length-1){cur++;play()}else done()};
+
+// ===== AKSI (event delegation) =====
+const A={
+rounds:d=>{rounds=+d.n;save();menu()},
+edit:()=>edit(),
+back:()=>{clean();menu()},
+mv:d=>{const i=+d.i,k=i+ +d.d;if(k<0||k>=bank.length)return;[bank[i],bank[k]]=[bank[k],bank[i]];save();edit()},
+dq:(d,b)=>{if(sure(b,'q'+d.i)){bank.splice(+d.i,1);save();edit()}},
+aq:()=>{bank.push({q:'',a:[{t:'',p:10},{t:'',p:10}]});save();edit();scrollTo(0,document.body.scrollHeight)},
+aa:d=>{bank[+d.i].a.push({t:'',p:5});save();edit()},
+da:d=>{bank[+d.i].a.splice(+d.j,1);save();edit()},
+reset:(d,b)=>{if(sure(b,'r')){bank=cl(DEF);save();edit()}},
+start:()=>{pl=valid().slice(0,rounds).map(x=>({q:x.q.trim(),a:x.a.filter(y=>y.t.trim()).slice(0,8).map(y=>({t:y.t.trim(),p:y.p}))}));if(!pl.length)return;sc={A:0,B:0};cur=0;play()},
+rv:(d,b)=>{const k=+d.k;if(rev[k])return;rev[k]=1;b.firstElementChild.classList.add('rx');rs+=pl[cur].a[k].p;$('#rs').textContent=rs;beep('ok')},
+no:()=>{beep('no');$('#wr').textContent=++wr;const m=$('#xm'),x=$('#xi');m.style.display='flex';x.classList.remove('pop');void x.offsetWidth;x.classList.add('pop');clearTimeout(xt);xt=setTimeout(()=>m.style.display='none',1500)},
+win:d=>{sc[d.t]+=rs;beep('win');next()},
+snd:(d,b)=>{snd=!snd;b.textContent=snd?'🔊':'🔇'}
+};
+addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b.dataset,b)});
+addEventListener('input',e=>{const d=e.target.dataset,f=d.f;if(!f)return;const v=e.target.value,i=+d.i,j=+d.j;if(f=='q')bank[i].q=v;else if(f=='t')bank[i].a[j].t=v;else bank[i].a[j].p=Math.max(0,parseInt(v)||0);save()});
+addEventListener('change',e=>{if(e.target.dataset.s=='go'){cur=+e.target.value;play()}});
+menu();
+</script>
+</body>
+</html>
